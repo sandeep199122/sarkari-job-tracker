@@ -1,1 +1,135 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sarkari Job Tracker</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: #f4f5f7;
+    margin: 0;
+    padding: 0;
+    color: #1a1a1a;
+  }
+  header {
+    background: #0f172a;
+    color: white;
+    padding: 20px;
+    text-align: center;
+  }
+  header h1 { margin: 0; font-size: 22px; }
+  .status {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: #16a34a;
+  }
+  .status.offline { background: #dc2626; }
+  #jobs {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 0 16px;
+  }
+  .job-card {
+    background: white;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #2563eb;
+    animation: fadeIn 0.4s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .job-card h3 { margin: 0 0 8px; font-size: 17px; }
+  .job-card .meta { font-size: 13px; color: #555; line-height: 1.6; }
+  .job-card a {
+    display: inline-block;
+    margin-top: 10px;
+    background: #2563eb;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .new-badge {
+    background: #f97316;
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+  }
+  .empty { text-align: center; color: #888; margin-top: 40px; }
+</style>
+</head>
+<body>
 
+<header>
+  <h1>🔔 Sarkari Job Tracker</h1>
+  <span id="statusBadge" class="status offline">Connecting...</span>
+</header>
+
+<div id="jobs">
+  <p class="empty" id="emptyMsg">Jobs load ho rahe hain...</p>
+</div>
+
+<!-- Socket.io client library, server hi serve karta hai isse -->
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+  const jobsContainer = document.getElementById("jobs");
+  const statusBadge = document.getElementById("statusBadge");
+  const emptyMsg = document.getElementById("emptyMsg");
+
+  socket.on("connect", () => {
+    statusBadge.textContent = "Live";
+    statusBadge.classList.remove("offline");
+  });
+
+  socket.on("disconnect", () => {
+    statusBadge.textContent = "Offline";
+    statusBadge.classList.add("offline");
+  });
+
+  // Naya job aate hi ye chalega — real-time update yahi hai
+  socket.on("newJob", (job) => {
+    if (emptyMsg) emptyMsg.remove();
+    renderJob(job, true);
+  });
+
+  function renderJob(job, isNew = false) {
+    const card = document.createElement("div");
+    card.className = "job-card";
+    card.innerHTML = `
+      <h3>${job.title} ${isNew ? '<span class="new-badge">NEW</span>' : ""}</h3>
+      <div class="meta">
+        📍 Source: ${job.sourceSite}<br/>
+        ${job.ageLimit ? `🎂 Age Limit: ${job.ageLimit}<br/>` : ""}
+        ${job.applicationFee ? `💰 Fee: ${job.applicationFee}<br/>` : ""}
+        ${job.importantDates?.lastDate ? `📅 Last Date: ${job.importantDates.lastDate}<br/>` : ""}
+      </div>
+      <a href="${job.applyLink}" target="_blank" rel="noopener">Apply / Details</a>
+    `;
+    jobsContainer.prepend(card);
+  }
+
+  // Page load hote hi purane jobs fetch karo
+  fetch("/api/jobs")
+    .then((res) => res.json())
+    .then((jobs) => {
+      if (jobs.length === 0) return; // emptyMsg already dikh raha hai
+      emptyMsg.remove();
+      jobs.forEach((job) => renderJob(job));
+    });
+</script>
+
+</body>
+</html>
