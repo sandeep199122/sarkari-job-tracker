@@ -68,6 +68,52 @@
     margin-left: 8px;
   }
   .empty { text-align: center; color: #888; margin-top: 40px; }
+
+  .add-source-box {
+    max-width: 800px;
+    margin: 20px auto 0;
+    padding: 16px 18px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .add-source-box h2 { margin: 0 0 12px; font-size: 15px; color: #333; }
+  .add-source-box .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .add-source-box input {
+    flex: 1;
+    min-width: 160px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  .add-source-box button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .add-source-box button:hover { background: #1d4ed8; }
+  #sourceMsg { margin-top: 8px; font-size: 13px; }
+
+  .sources-list {
+    max-width: 800px;
+    margin: 14px auto 0;
+    padding: 0 2px;
+    font-size: 13px;
+    color: #555;
+  }
+  .sources-list span {
+    display: inline-block;
+    background: #eef2ff;
+    color: #3730a3;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin: 4px 6px 0 0;
+  }
 </style>
 </head>
 <body>
@@ -76,6 +122,17 @@
   <h1>🔔 Sarkari Job Tracker</h1>
   <span id="statusBadge" class="status offline">Connecting...</span>
 </header>
+
+<div class="add-source-box">
+  <h2>➕ Nayi sarkari job website add karo</h2>
+  <div class="row">
+    <input type="text" id="srcName" placeholder="Website ka naam (jaise: SSC)" />
+    <input type="text" id="srcUrl" placeholder="Website ka link (jaise: https://ssc.gov.in/)" />
+    <button onclick="addSource()">Add karo</button>
+  </div>
+  <p id="sourceMsg"></p>
+  <div class="sources-list" id="sourcesList"></div>
+</div>
 
 <div id="jobs">
   <p class="empty" id="emptyMsg">Jobs load ho rahe hain...</p>
@@ -120,6 +177,62 @@
     `;
     jobsContainer.prepend(card);
   }
+
+  // "Add karo" button dabane par ye function chalta hai
+  function addSource() {
+    const name = document.getElementById("srcName").value.trim();
+    const url = document.getElementById("srcUrl").value.trim();
+    const msg = document.getElementById("sourceMsg");
+
+    if (!name || !url) {
+      msg.textContent = "❌ Naam aur link dono bharna zaroori hai";
+      msg.style.color = "#dc2626";
+      return;
+    }
+
+    msg.textContent = "Add ho raha hai...";
+    msg.style.color = "#555";
+
+    fetch("/api/sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, url }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.error) {
+          msg.textContent = "❌ Error: " + data.error;
+          msg.style.color = "#dc2626";
+        } else {
+          msg.textContent = `✅ "${name}" add ho gaya! Scraper jaldi hi check karega.`;
+          msg.style.color = "#16a34a";
+          document.getElementById("srcName").value = "";
+          document.getElementById("srcUrl").value = "";
+          loadSourcesList();
+        }
+      })
+      .catch(() => {
+        msg.textContent = "❌ Kuch galat hua, dobara try karo";
+        msg.style.color = "#dc2626";
+      });
+  }
+
+  // Ab tak jo websites add ho chuki hain unki list dikhao
+  function loadSourcesList() {
+    fetch("/api/sources")
+      .then((res) => res.json())
+      .then((sources) => {
+        const el = document.getElementById("sourcesList");
+        if (sources.length === 0) {
+          el.innerHTML = "";
+          return;
+        }
+        el.innerHTML =
+          "Ab tak add ki hui websites: " +
+          sources.map((s) => `<span>${s.name}</span>`).join("");
+      });
+  }
+  loadSourcesList();
 
   // Page load hote hi purane jobs fetch karo
   fetch("/api/jobs")
