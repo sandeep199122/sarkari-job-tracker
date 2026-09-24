@@ -1,0 +1,23 @@
+{
+  "name": "sarkari-job-tracker",
+  "version": "1.0.0",
+  "description": "Auto-scraper jo sarkari job websites check karke naye jobs frontend par live dikhata hai",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mongoose": "^8.5.0",
+    "socket.io": "^4.7.5",
+    "node-cron": "^3.0.3",
+    "cheerio": "^1.0.0-rc.12",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
