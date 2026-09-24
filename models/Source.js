@@ -15,4 +15,4 @@ const sourceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Source", sourceSchema);
+module.exports = mongoose.models.Source || mongoose.model("Source", sourceSchema);
